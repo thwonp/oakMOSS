@@ -142,7 +142,7 @@ apply_overlay() {
     [ -d "$bov" ] && cp -a "$bov/." "$SDK_DIR/package/add-rootfs-demo/"
     # plorpOS in the image: PLORPOS_PAYLOAD names the board's plorpOS zip (plorpOS-v<version>-<board>.zip). Its contents
     # go to /usr/magicx/plorpos-payload, which oakmoss-plorpos.sh copies onto a card that has no frontend.
-    if [ -n "${PLORPOS_PAYLOAD:-}" ]; then
+    if [ -n "${PLORPOS_PAYLOAD:-}" ] && [ "$STEP" = image ]; then   # not the ext step, which stages the zero28 overlay
         [ -f "$PLORPOS_PAYLOAD" ] || die "PLORPOS_PAYLOAD=$PLORPOS_PAYLOAD: no such file"
         local pl=$SDK_DIR/package/add-rootfs-demo/usr/magicx/plorpos-payload
         rm -rf "$pl"; mkdir -p "$pl"
