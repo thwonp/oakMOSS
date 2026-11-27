@@ -140,6 +140,17 @@ apply_overlay() {
     cp -a "$ov/usr" "$SDK_DIR/package/add-rootfs-demo/usr"
     cp -a "$ov/etc" "$SDK_DIR/package/add-rootfs-demo/etc"
     [ -d "$bov" ] && cp -a "$bov/." "$SDK_DIR/package/add-rootfs-demo/"
+    # plorpOS in the image: PLORPOS_PAYLOAD names the board's plorpOS zip (plorpOS-v<version>-<board>.zip). Its contents
+    # go to /usr/magicx/plorpos-payload, which oakmoss-plorpos.sh copies onto a card that has no frontend.
+    if [ -n "${PLORPOS_PAYLOAD:-}" ]; then
+        [ -f "$PLORPOS_PAYLOAD" ] || die "PLORPOS_PAYLOAD=$PLORPOS_PAYLOAD: no such file"
+        local pl=$SDK_DIR/package/add-rootfs-demo/usr/magicx/plorpos-payload
+        rm -rf "$pl"; mkdir -p "$pl"
+        unzip -q "$PLORPOS_PAYLOAD" -d "$pl" || die "$PLORPOS_PAYLOAD does not unzip"
+        [ -f "$pl/.tmp_update/updater" ] && [ -d "$pl/plorpOS" ] || die "$PLORPOS_PAYLOAD is not a plorpOS card zip (.tmp_update/updater, plorpOS/)"
+        grep -q "= $DEVICE_MARKER \]" "$pl/.tmp_update/updater" || die "$PLORPOS_PAYLOAD is not the $DEVICE_MARKER build of plorpOS"
+        log "plorpOS payload: $(du -sm "$pl" | cut -f1) MiB from $(basename "$PLORPOS_PAYLOAD")"
+    fi
     # The oakMOSS libraries (the lane's PORTS_SET=flip, docs/flip-set.md): OAKMOSS_LIBS names a built set, installed as
     # /usr/lib/oakmoss with its BUILD-INFO and SHA256SUMS (paths relative to that folder). Without it the image has none.
     if [ -n "${OAKMOSS_LIBS:-}" ]; then

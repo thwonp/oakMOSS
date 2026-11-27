@@ -94,6 +94,13 @@ while :; do
         exit 0
     fi
 
+    # An image built with plorpOS: a card with no frontend gets it (oakmoss-plorpos.sh), then the election runs again.
+    if [ -d /usr/magicx/plorpos-payload ] && ! [ -f "$MAGICX_PATH" ] && ! [ -f "$UPDATER_PATH" ] &&
+        oakmoss-plorpos.sh seed; then
+        oakmoss-cards.sh umount
+        continue
+    fi
+
     [ -f "$MAGICX_PATH" ] || [ -f "$UPDATER_PATH" ] && break
     text_off
 

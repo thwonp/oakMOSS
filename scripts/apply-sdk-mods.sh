@@ -27,7 +27,10 @@ case $(kdebug_patch_state "$OAKMOSS_ROOT/sdk-patches/debug/kdebug-mark.patch") i
     absent) ;;
     applied) if [ "$CHECK" = 1 ]; then warn "the debug marker is applied: tree patches it overlaps may read MISSING"
              else die "the debug marker is applied - revert it first (scripts/kdebug.sh revert, or KDEBUG_MARK=0 scripts/build.sh overlay zero28)"; fi ;;
-    *) die "the SDK tree carries debug edits the debug patch does not describe (scripts/kdebug.sh check)" ;;
+    # A pristine SDK (no stamp yet): the patch cannot apply, since it edits files only the tree patches below create
+    # (hynitron_core.c), and the marker is only ever applied after them. Not a stray edit.
+    *) if [ ! -f "$SDK_DIR/.oakmoss-mods" ]; then :
+       else die "the SDK tree carries debug edits the debug patch does not describe (scripts/kdebug.sh check)"; fi ;;
 esac
 
 # 1. Tree patches (rules.mk, kernel config, toolchain menu, package Makefiles).
@@ -140,7 +143,11 @@ for patch in "$P"/tree/*.patch; do
         upgrade_apply "$patch" || die "patch $name: its .upgrade does not bring this tree to the patch - nothing changed"
         changed=1; note upgraded "$name"; continue
     fi
-    if patch_effect_present "$patch"; then note "in-tree" "$name"; continue; fi
+    # A patch that still applies forward is not in the tree, whatever lines it adds already exist elsewhere in a file
+    # (060's "--disable-more" is also in util-linux's host block). The in-tree test is for one that no longer applies.
+    if ! patch -p1 -N --dry-run -s --no-backup-if-mismatch < "$patch" >/dev/null 2>&1 && patch_effect_present "$patch"; then
+        note "in-tree" "$name"; continue
+    fi
     if [ "$CHECK" = 1 ]; then note MISSING "$name"; missing=1; continue; fi
     # never forced: a patch that does not apply cleanly stops here with the tree untouched
     patch -p1 -N --dry-run -s --no-backup-if-mismatch < "$patch" >/dev/null 2>&1 ||
