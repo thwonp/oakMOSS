@@ -236,6 +236,8 @@ late() {
 
 shutdown() {
 	[ -f $T/n ] || return
+	# As in late(): a first boot that runmagicx.sh turned off puts nothing on the card at its end either.
+	[ "$(fw_printenv -n oakmoss_debug 2>/dev/null)" = 0 ] && return
 	R=$T/$(name "$(cat $T/n)")
 	{
 		echo "started: $(now) at uptime $(up) s"
