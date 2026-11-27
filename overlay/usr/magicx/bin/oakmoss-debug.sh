@@ -217,6 +217,9 @@ to_card() {	# this boot's record and the short ones the base card kept, onto the
 late() {
 	[ -f $T/n ] || return
 	sleep 60
+	# A new image starts with the env default (on); runmagicx.sh turns it off once it has read SD1's
+	# partition and found no oakmoss-debug file, a few seconds into this boot. Then nothing goes on the card.
+	[ "$(fw_printenv -n oakmoss_debug 2>/dev/null)" = 0 ] && return
 	R=$T/$(name "$(cat $T/n)")
 	dmesg | mask > "$R/dmesg.txt"
 	i=0
